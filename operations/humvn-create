@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+#
+# HuMVN (pronounced "human")
+# creates a new project from a Maven archetype
+#
+
+function usage()
+{
+  cat << EOF
+Usage: humvn create <project tag> <archetype tag> [ <description> ]
+
+Creates a new project from the specified Maven Archetype, with the specified
+group ID and artifact ID.
+
+When executed inside an existing project, the current project will be transformed
+according to the archetype.
+
+  <project tag>     Maven artifact tag for the new project, in the format:
+
+                            <GROUP ID>:<ARTIFACT ID>:<VERSION>
+
+  <archetype tag>   The archetype to create the project from, in the format:
+
+                            <GROUP ID>:<ARTIFACT ID>:<VERSION>
+EOF
+global_options
+}
+
+# parse options
+PROJECT_GROUP=
+PROJECT_ARTIFACT=
+PROJECT_VERSION=
+ARCHETYPE_GROUP=
+ARCHETYPE_ARTIFACT=
+ARCHETYPE_VERSION=
+
+# extract parameters
+case "$1"
+  *":"*":"*)
+    IFS=: read -r PROJECT_GROUP PROJECT_ARTIFACT PROJECT_VERSION <<< $1
+    ;;
+  *)
+    error "Invalid project tag: '$1'" true 1
+esac
+
+case "$2"
+  *":"*":"*)
+    IFS=: read -r ARCHETYPE_GROUP ARCHETYPE_ARTIFACT ARCHETYPE_VERSION <<< $2
+    ;;
+  *)
+    error "Invalid archetype tag: '$2'" true 1
+esac
+
+$HUMVN_MAVEN "archetype:generate" \
+  "-DinteractiveMode=false" \
+  "-DarchetypeGroupId=$ARCHETYPE_GROUP" \
+  "-DarchetypeArtifactId=$ARCHETYPE_ARTIFACT" \
+  "-DarchetypeVersion=$ARCHETYPE_VERSION" \
+  "-DgroupId=$PROJECT_GROUP" \
+  "-DartifactId=$PROJECT_ARTIFACT" \
+  "-Dversion=$PROJECT_VERSION"
+

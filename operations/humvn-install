@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+#
+# HuMVN (pronounced "human")
+# installs a Maven artifact to this machine
+#
+
+function usage()
+{
+  cat << EOF
+Usage: humvn install [ <artifact tag> | -f <artifact POM file> ]
+
+Installs an existing Maven artifact to the local repository, including
+its dependencies and any transitive dependencies.
+
+  <artifact tag>    Maven artifact tag for the artifact, in the format:
+
+                            <GROUP ID>:<ARTIFACT ID>:<VERSION>[:<CLASSIFIER>]
+
+  -f <POM file>     The Maven POM file for the artifact to install.
+EOF
+global_options
+}
+
+# parse options
+POM_FILE=
+GROUP_ID=
+ARTIFACT_ID=
+VERSION=
+CLASSIFIER=
+
+# extract parameters
+while [ $# -gt 0 ]
+do
+  case "$1" in
+    "-f" | "--file")
+      if [ $# -lt 2 ]; then
+        error "You must specify a POM file for the artifact to install." true 1
+      fi
+      shift
+
+      if [ ! -f $1 ]; then
+        error "You must specify a valid POM file for the artifact to install." true 1
+      fi
+
+      if [ ! -r $1 ]; then
+        error "The specified file is not readable by this user. Check permissions." true 1
+      fi
+
+      POM_FILE=$1
+      shift
+      ;;
+
+    *":"*":"*":"* | *":"*":"*)
+      IFS=: read -r GROUP_ID ARTIFACT_ID VERSION CLASSIFIER <<< $1
+      shift
+      ;;
+
+    *)
+      error "Unrecognised parameter: $1" true 1
+
+  esac
+done
+
+if [ $POM_FILE ]; then
+  # install from POM
+
+  if [ -f $POM_FILE ]; then
+    error "'$POM_FILE' does not exist. Specify an existing POM file to install" true 1
+  fi
+
+  if [ -r $POM_FILE ]; then
+    error "'$POM_FILE' is not readable by this user. Check permissions." true 1
+  fi
+
+  if [ "<?xml" -ne `head -c5 $POM_FILE` ]; then
+    error "'$POM_FILE' is not a valid XML file. You must specify a valid POM file to install." true 1
+  fi
+
+  $HUMVN_MAVEN "install:install-file" \
+    "-Dfile=$POM_FILE"
+else
+  # install from artifact tag
+
+  if [ -z $GROUP_ID ]; then
+    error "Invalid artifact tag: missing group ID." true 1
+  fi
+
+  if [ -z $ARTIFACT_ID ]; then
+    error "Invalid artifact tag: missing artifact ID." true 1
+  fi
+
+  if [ -z $VERSION ]; then
+    error "Invalid artifact tag: missing version." true 1
+  fi
+
+  $HUMVN_MAVEN "install:install-file" \
+    "-DartifactId=$ARTIFACT_ID" \
+    "-DgroupId=$GROUP_ID" \
+    "-Dversion=$VERSION" \
+    "-Dclassifier=$CLASSIFIER"
+fi
+

@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+#
+# HuMVN (pronounced "human")
+# 
+# A humanised user-interface for Maven
+#
+
+source "humvn-functions"
+
+# ensure there's an operation
+if [ !$1 ]; then
+  error "No operation specified.\nYou must specify an operation to perform." true 1
+fi
+
+# parse global options
+while [ $# -gt 0 -a ! $OPERATION ]
+do
+  case "$1" in
+    "--maven="*)
+      HUMVN_MAVEN="${1:8}"
+      shift;;
+    "--version")
+      version
+      exit;;
+    "--help")
+      usage
+      exit;;
+    "--"*)
+      error "Unrecognised option '$1'." true 1;;
+    *)
+      OPERATION=`echo "$1" | tr A-Z a-z`
+      OPERATION_FILE="humvn-$OPERATION"
+      shift
+  esac
+done
+
+# validate operation
+if [ ! -f $OPERATION_FILE ]; then
+  error "'$OPERATION' is not a valid operation.\nPlease specify a valid operation.\n\n" false
+  list_operations
+  exit 1
+fi
+
+# execute operation
+source "humvn-$OPERATION"
+

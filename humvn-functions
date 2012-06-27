@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+#
+# HuMVN (pronounced "human")
+# 
+# A humanised user-interface for Maven
+#
+# Global functions
+#
+
+export HUMVN_DIR=`dirname $0`
+
+if [ ! $HUMVN_MAVEN ]; then
+  export HUMVN_MAVEN=`which mvn`
+fi
+
+function usage()
+{
+  cat ./humvn-usage.txt
+}
+
+function version()
+{
+  cat ./humvn-version.txt
+}
+
+function warn()
+{
+  echo "WARNING: $1"
+
+  if [ $2 ]; then
+    echo "Press ENTER to continue anyway, or Ctrl+C to exit..."
+    read
+  fi
+}
+
+function error()
+{
+  if [ $# -gt 0 ]; then
+    echo "ERROR: $1"
+  else
+    echo "ERROR: An unknown error occurred."
+  fi
+
+  if [ $2 ]; then
+    usage()
+  fi
+
+  if [ $3 ]; then
+    exit $3
+  fi
+}
+
+function list_operations()
+{
+  echo "Available operations:"
+  for OPERATION in `ls "$HUMVN_DIR/operations"`
+  do
+    echo "\t$OPERATION - `tail -n+4 $HUMVN_DIR/operations/$OPERATION | head -n1`"
+  done
+  echo
+}
+
+function global_options()
+{
+  cat << EOF
+
+  --maven=/path/to/mvn  Explicitly specify the path to the Maven 'mvn' binary.
+  --version             Version information.
+  --help                This usage information.
+
+EOF
+}
+
